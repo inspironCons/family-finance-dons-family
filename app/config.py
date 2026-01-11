@@ -13,5 +13,14 @@ class Settings:
     MAIL_USERNAME = os.getenv("MAIL_USERNAME", "")
     MAIL_PASSWORD = os.getenv("MAIL_PASSWORD", "")
     MAIL_FROM = os.getenv("MAIL_FROM", "noreply@financepwa.com")
+    
+    # AI Context (Privasi)
+    # Default ini aman untuk publik. Prompt asli simpan di .env
+    AI_PROMPT_CONTEXT = os.getenv("AI_PROMPT_CONTEXT", """
+    PROFIL PENGGUNA:
+    - Seorang manajer keuangan keluarga yang ingin berhemat.
+    - Punya beberapa tujuan finansial jangka panjang.
+    - Berikan saran yang umum namun memotivasi.
+    """)
 
 settings = Settings()

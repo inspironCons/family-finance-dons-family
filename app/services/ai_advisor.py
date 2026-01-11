@@ -1,22 +1,9 @@
 import google.generativeai as genai
 from ..config import settings
 import logging
+import os
 
 logger = logging.getLogger(__name__)
-
-
-USER_PROFILE = """
-PROFIL KELUARGA:
-- Kepala Keluarga: Karyawan (Gaji Tetap).
-- Istri: Pengusaha (Income Fluktuatif).
-- Anak: 1 orang (Balita, ~2 tahun).
-- Utang: KPR (Sisa 515 Jt).
-- Gaya Bahasa: Santai, suportif, "Bro/Sis", tapi tegas soal angka.
-
-GOALS:
-1. Short Term: Macbook Pro (Suami), Upgrade HRV RS (Istri), Umroh.
-2. Long Term: Lunas KPR, Haji.
-"""
 
 def get_financial_advice(month_income, month_expense, top_categories):
     if not settings.GEMINI_API_KEY:
@@ -24,28 +11,32 @@ def get_financial_advice(month_income, month_expense, top_categories):
 
     try:
         genai.configure(api_key=settings.GEMINI_API_KEY)
-        
-        # Coba inisialisasi model (Gunakan 1.5 Flash jika 2.0 error/belum tersedia)
-        # 1.5 Flash sangat cukup untuk task analisis teks seperti ini.
-        model = genai.GenerativeModel('gemini-3-flash-preview') 
+        model = genai.GenerativeModel('gemini-1.5-flash')
 
-        # Format kategori
-        top_cat_str = ", ".join([f"{c['name']} (Rp {c['total']})" for c in top_categories])
+        top_cat_str = ", ".join([f"{c['name']} (Rp {c['total']:,})" for c in top_categories])
         sisa_cashflow = month_income - month_expense
         
+        # Baca Context dari File (Rahasia & Fleksibel)
+        context_file_path = "context.txt" # Path di dalam container (root workdir /app)
+        user_context = "User adalah keluarga yang ingin berhemat." # Default aman
+        
+        if os.path.exists(context_file_path):
+            with open(context_file_path, "r", encoding="utf-8") as f:
+                user_context = f.read()
+        
         prompt = f"""
-        {USER_PROFILE}
+        {user_context}
 
         LAPORAN BULAN INI:
-        - Income: Rp {month_income}
-        - Expense: Rp {month_expense}
-        - Sisa Cashflow: Rp {sisa_cashflow}
+        - Income: Rp {month_income:,}
+        - Expense: Rp {month_expense:,}
+        - Sisa Cashflow: Rp {sisa_cashflow:,}
         - Pengeluaran Terbesar: {top_cat_str}
 
         TUGAS (Jawab dalam Bahasa Indonesia yang natural):
-        1. Diagnosis: Apakah cashflow bulan ini aman mengingat cicilan KPR & income istri yang fluktuatif?
-        2. Action Plan: Alokasikan Rp {sisa_cashflow} ini kemana? (Pilih: Dana Darurat/Reksadana/Tabungan Goal). Prioritaskan Goal Macbook vs HRV mana yang lebih masuk akal dikejar duluan.
-        3. Simulasi Kilat: Berapa bulan lagi salah satu goal tercapai jika konsisten seperti bulan ini?
+        1. Diagnosis: Apakah cashflow bulan ini aman?
+        2. Action Plan: Alokasikan Rp {sisa_cashflow:,} ini kemana?
+        3. Simulasi Kilat: Kapan goal tercapai?
         
         Keep it short, insightful, and actionable.
         """

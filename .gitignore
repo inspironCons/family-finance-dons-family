@@ -2,3 +2,4 @@
 data/finance.db
 __pycache__/
 .env
+context.txt
