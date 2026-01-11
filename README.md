@@ -5,25 +5,20 @@ Aplikasi manajemen keuangan keluarga berbasis web (Progressive Web App) yang dir
 ## ✨ Fitur Utama
 
 - **🚀 Dashboard Finansial:** Pantau total saldo, indikator "runway" pengeluaran bulan ini, dan **Smart Daily Allowance** (jatah jajan harian otomatis).
-- **🤖 Gemini AI Advisor:** Halaman khusus konsultasi keuangan. AI menganalisa data transaksi Anda dan memberikan strategi investasi konkret untuk mencapai impian (Umroh, Haji, HRV RS, Macbook Pro, & Lunas KPR).
+- **🤖 Gemini AI Advisor:** Halaman khusus konsultasi keuangan. AI menganalisa data transaksi Anda dan memberikan strategi investasi konkret untuk mencapai impian (berdasarkan file konteks pribadi).
 - **💸 Manajemen Transaksi:** Catat pemasukan dan pengeluaran dengan sistem **3 Bucket** (Fixed Cost, Living Cost, Lifestyle).
 - **🏦 Multi-Wallet & Transfer:** Kelola banyak dompet (Cash, Bank, E-Wallet) dan lakukan transfer antar dompet (seperti tarik tunai ATM).
 - **⚖️ Cash Opname:** Fitur penyesuaian saldo jika uang fisik tidak sesuai dengan aplikasi (otomatis mencatat selisih).
 - **🔒 Secure Session:** Akses aplikasi aman dengan **PIN Keluarga** dan sistem *auto-logout* setiap 1 jam.
-- **📱 PWA Ready:** Bisa di-install di HP (Android/iOS) dan terasa seperti aplikasi native tanpa harus melalui App Store.
+- **📱 PWA Ready:** Bisa di-install di HP (Android/iOS) dan terasa seperti aplikasi native.
 
-## 🛠️ Tech Stack
+## 🛡️ Keamanan & Privasi
 
-- **Backend:** Python 3.10+, FastAPI (High Performance)
-- **Database:** SQLite (Relational, File-based)
-- **ORM:** SQLAlchemy
-- **AI:** Google Gemini Pro API (via `google-generativeai`)
-- **Frontend:** Jinja2 Templates, Tailwind CSS (via CDN), Chart.js
-- **Containerization:** Docker & Docker Compose
+Aplikasi ini dirancang untuk menjaga privasi data Anda:
+- **Kontek Pribadi:** Semua profil keluarga dan tujuan finansial disimpan di file lokal `context.txt` (tidak di-push ke Git).
+- **Secrets:** API Key dan PIN dikelola via Environment Variables.
 
 ## 🚀 Cara Menjalankan (Docker)
-
-Pastikan Anda sudah menginstal Docker di laptop Anda.
 
 1.  **Clone Repositori:**
     ```bash
@@ -31,8 +26,14 @@ Pastikan Anda sudah menginstal Docker di laptop Anda.
     cd family-finance-dons-family
     ```
 
-2.  **Siapkan API Key:**
-    Dapatkan API Key Gemini di [Google AI Studio](https://aistudio.google.com/app/apikey).
+2.  **Siapkan Konteks AI:**
+    Buat file bernama `context.txt` di root folder dan isi dengan profil keluarga Anda. Contoh:
+    ```text
+    PROFIL KELUARGA:
+    - Kepala Keluarga: Karyawan.
+    - Istri: Pengusaha.
+    ...
+    ```
 
 3.  **Jalankan dengan Docker CLI:**
     ```powershell
@@ -40,6 +41,7 @@ Pastikan Anda sudah menginstal Docker di laptop Anda.
     docker run -d `
       -p 8000:8000 `
       -v ${PWD}/data:/app/data `
+      -v ${PWD}/context.txt:/app/context.txt `
       -e ADMIN_PIN=512323 `
       -e GEMINI_API_KEY="KUNCI_API_ANDA" `
       --name family-finance-app `
@@ -47,21 +49,14 @@ Pastikan Anda sudah menginstal Docker di laptop Anda.
     ```
 
 4.  **Akses Aplikasi:**
-    Buka browser dan ketik: `http://localhost:8000`
+    Buka `http://localhost:8000` (PIN Default: 512323 atau sesuai env).
 
-## ⚙️ Konfigurasi Environment
+## 🛠️ Tech Stack
 
-| Variabel | Deskripsi | Default |
-| :--- | :--- | :--- |
-| `ADMIN_PIN` | PIN untuk login aplikasi | `123456` |
-| `GEMINI_API_KEY` | API Key dari Google AI Studio | - |
-| `SECRET_KEY` | Key untuk enkripsi session cookie | `RAHASIA_SUPER_AMAN` |
-
-## 👨‍👩‍👧 Profil Target Analisa AI
-Aplikasi ini dioptimalkan untuk keluarga dengan profil:
-- Pekerjaan tetap (Kantoran) + Pengusaha (Fluktuatif).
-- Memiliki tanggungan anak usia balita.
-- Memiliki target pelunasan KPR dan upgrade aset kendaraan.
+- **Backend:** Python 3.10+, FastAPI
+- **Database:** SQLite + SQLAlchemy
+- **AI:** Google Gemini 1.5 Flash
+- **Frontend:** Jinja2, Tailwind CSS, Chart.js, Marked.js (Markdown)
 
 ---
 Dibuat dengan ❤️ untuk kemajuan finansial keluarga.
