@@ -1,0 +1,91 @@
+{% extends "base.html" %}
+
+{% block title %}Tambah Dompet{% endblock %}
+
+{% block content %}
+<div class="p-6">
+    <div class="flex items-center mb-6">
+        <a href="/wallets" class="text-gray-600 mr-4">
+            <i class="ph ph-arrow-left text-2xl"></i>
+        </a>
+        <h1 class="text-xl font-bold">Dompet Baru</h1>
+    </div>
+
+    <form action="/wallets/add" method="post" class="space-y-5">
+        
+        <!-- Nama Dompet -->
+        <div>
+            <label class="block text-xs font-bold text-gray-500 uppercase mb-2">Nama Dompet</label>
+            <input type="text" name="name" required placeholder="Contoh: Tabungan Nikah, Bank Jago"
+                class="w-full bg-gray-50 border border-gray-200 rounded-xl p-4 focus:ring-2 focus:ring-blue-500 outline-none">
+        </div>
+
+        <!-- Tipe Dompet -->
+        <div>
+            <label class="block text-xs font-bold text-gray-500 uppercase mb-2">Tipe</label>
+            <div class="grid grid-cols-3 gap-3">
+                <label class="cursor-pointer">
+                    <input type="radio" name="wallet_type" value="Cash" class="peer hidden" required>
+                    <div class="bg-gray-50 border border-gray-200 rounded-xl p-3 text-center peer-checked:bg-blue-600 peer-checked:text-white peer-checked:border-blue-600 transition">
+                        <i class="ph ph-money text-2xl mb-1 block"></i>
+                        <span class="text-xs font-bold">Tunai</span>
+                    </div>
+                </label>
+                <label class="cursor-pointer">
+                    <input type="radio" name="wallet_type" value="Bank" class="peer hidden">
+                    <div class="bg-gray-50 border border-gray-200 rounded-xl p-3 text-center peer-checked:bg-blue-600 peer-checked:text-white peer-checked:border-blue-600 transition">
+                        <i class="ph ph-bank text-2xl mb-1 block"></i>
+                        <span class="text-xs font-bold">Bank</span>
+                    </div>
+                </label>
+                <label class="cursor-pointer">
+                    <input type="radio" name="wallet_type" value="E-Wallet" class="peer hidden">
+                    <div class="bg-gray-50 border border-gray-200 rounded-xl p-3 text-center peer-checked:bg-blue-600 peer-checked:text-white peer-checked:border-blue-600 transition">
+                        <i class="ph ph-wallet text-2xl mb-1 block"></i>
+                        <span class="text-xs font-bold">E-Wallet</span>
+                    </div>
+                </label>
+            </div>
+        </div>
+
+        <!-- Saldo Awal -->
+        <div>
+            <label class="block text-xs font-bold text-gray-500 uppercase mb-2">Saldo Saat Ini</label>
+            <div class="relative">
+                <span class="absolute left-4 top-1/2 -translate-y-1/2 font-bold text-gray-400">Rp</span>
+                <input type="text" id="displayBalance" required
+                    class="w-full bg-gray-50 border border-gray-200 rounded-xl py-4 pl-12 pr-4 text-xl font-bold focus:ring-2 focus:ring-blue-500 outline-none"
+                    placeholder="0" inputmode="numeric">
+                <input type="hidden" name="initial_balance" id="realBalance">
+            </div>
+            <p class="text-xs text-gray-400 mt-2 ml-1">Masukkan jumlah uang yang ada di dompet ini sekarang.</p>
+        </div>
+
+        <!-- Submit -->
+        <button type="submit"
+            class="w-full bg-blue-600 text-white font-bold py-4 rounded-xl shadow-lg hover:bg-blue-700 transition transform active:scale-95 mt-8">
+            Simpan Dompet
+        </button>
+    </form>
+</div>
+
+<script>
+    // Logic Format Rupiah (Sama seperti halaman transaksi)
+    const displayInput = document.getElementById('displayBalance');
+    const realInput = document.getElementById('realBalance');
+
+    displayInput.addEventListener('input', function(e) {
+        let value = this.value.replace(/[^0-9]/g, '');
+        realInput.value = value;
+        if (value) {
+            this.value = new Intl.NumberFormat('id-ID').format(value);
+        } else {
+            this.value = '';
+        }
+    });
+
+    document.querySelector('form').addEventListener('submit', function(e) {
+        if (!realInput.value) realInput.value = 0;
+    });
+</script>
+{% endblock %}

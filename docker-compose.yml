@@ -1,0 +1,18 @@
+version: '3.8'
+
+services:
+  web:
+    build: .
+    container_name: family_finance_app
+    ports:
+      - "8000:8000"
+    volumes:
+      # Mount folder data agar database SQLite tidak hilang saat container dihapus
+      - ./data:/app/data
+      # Opsional: Mount source code untuk hot-reload saat development (tanpa rebuild image)
+      - ./app:/app/app
+      - ./templates:/app/templates
+      - ./static:/app/static
+    environment:
+      - SQLALCHEMY_DATABASE_URL=sqlite:///./data/finance.db
+    restart: unless-stopped

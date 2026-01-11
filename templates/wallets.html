@@ -1,0 +1,62 @@
+{% extends "base.html" %}
+
+{% block title %}Dompet Saya{% endblock %}
+
+{% block content %}
+<div class="bg-blue-600 pb-10 pt-6 px-6 rounded-b-3xl shadow-md">
+    <div class="flex items-center text-white mb-4">
+        <h1 class="text-xl font-bold">Dompet & Aset</h1>
+    </div>
+    <div class="text-white">
+        <p class="text-blue-100 text-sm">Total Kekayaan Bersih</p>
+        <h2 class="text-3xl font-bold">Rp {{ "{:,.0f}".format(total_balance).replace(',', '.') }}</h2>
+    </div>
+</div>
+
+<div class="px-6 -mt-6 pb-20">
+    <!-- Action Button -->
+    <div class="flex justify-end mb-4">
+        <a href="/wallets/add" class="bg-white text-blue-600 px-4 py-2 rounded-full shadow-md text-sm font-bold flex items-center hover:bg-gray-50">
+            <i class="ph ph-plus-circle text-lg mr-1"></i> Tambah Dompet
+        </a>
+    </div>
+
+    <!-- Wallet List -->
+    <div class="space-y-4">
+        {% for wallet in wallets %}
+        <div class="bg-white p-5 rounded-2xl shadow-sm border border-gray-100 flex justify-between items-center">
+            <div class="flex items-center space-x-4">
+                <div class="w-12 h-12 rounded-full flex items-center justify-center 
+                    {% if wallet.wallet_type == 'Cash' %} bg-green-100 text-green-600
+                    {% elif wallet.wallet_type == 'Bank' %} bg-blue-100 text-blue-600
+                    {% else %} bg-purple-100 text-purple-600 {% endif %}">
+                    
+                    {% if wallet.wallet_type == 'Cash' %} <i class="ph ph-money text-2xl"></i>
+                    {% elif wallet.wallet_type == 'Bank' %} <i class="ph ph-bank text-2xl"></i>
+                    {% else %} <i class="ph ph-wallet text-2xl"></i> {% endif %}
+                </div>
+                <div>
+                    <h3 class="font-bold text-gray-800">{{ wallet.name }}</h3>
+                    <p class="text-xs text-gray-500 uppercase">{{ wallet.wallet_type }}</p>
+                </div>
+            </div>
+            <div class="text-right">
+                <p class="font-bold text-gray-800 mb-1">Rp {{ "{:,.0f}".format(wallet.initial_balance).replace(',', '.') }}</p>
+                
+                <div class="flex items-center justify-end space-x-3 mt-2">
+                    <!-- Adjust Button -->
+                    <a href="/wallets/{{ wallet.id }}/adjust" class="text-xs text-blue-500 hover:text-blue-700 font-bold flex items-center">
+                        <i class="ph ph-scales mr-1"></i> Sesuaikan
+                    </a>
+                    
+                    <!-- Delete Button -->
+                    <a href="/wallets/{{ wallet.id }}/delete" class="text-xs text-red-400 hover:text-red-600 font-bold flex items-center">
+                        <i class="ph ph-trash mr-1"></i> Hapus
+                    </a>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+{% endblock %}

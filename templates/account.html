@@ -1,0 +1,120 @@
+{% extends "base.html" %}
+
+{% block title %}Akun & Pengaturan{% endblock %}
+
+{% block content %}
+<div class="bg-gray-800 pb-10 pt-6 px-6 rounded-b-3xl shadow-md text-white">
+    <div class="flex justify-between items-start mb-4">
+        <div class="flex items-center space-x-4">
+            <div class="bg-gray-600 w-16 h-16 rounded-full flex items-center justify-center">
+                <i class="ph ph-user text-3xl"></i>
+            </div>
+            <div>
+                <h1 class="text-xl font-bold">Keluarga Ramdhon</h1>
+                <p class="text-gray-400 text-sm">Finance Manager</p>
+            </div>
+        </div>
+        <a href="/auth/logout" class="bg-gray-700 p-2 rounded-lg text-red-400 hover:bg-gray-600 hover:text-red-300 transition">
+            <i class="ph ph-sign-out text-xl"></i>
+        </a>
+    </div>
+</div>
+
+<div class="px-6 -mt-6 pb-24">
+    
+    <!-- Section: Kategori Pengeluaran -->
+    <div class="bg-white p-5 rounded-2xl shadow-sm border border-gray-100 mb-6">
+        <div class="flex justify-between items-center mb-4">
+            <h2 class="font-bold text-gray-800">Kategori Pengeluaran</h2>
+            <button onclick="document.getElementById('modalAddCat').classList.remove('hidden')" class="text-blue-600 text-sm font-bold bg-blue-50 px-3 py-1 rounded-full hover:bg-blue-100">
+                + Baru
+            </button>
+        </div>
+
+        <div class="space-y-6">
+            <!-- Fixed -->
+            <div>
+                <p class="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">🔒 Kewajiban (Fixed)</p>
+                <div class="flex flex-wrap gap-2">
+                    {% for cat in expense_fixed %}
+                    <span class="bg-gray-50 text-gray-700 px-3 py-1 rounded-lg text-sm border border-gray-200 flex items-center">
+                        <i class="ph ph-{{ cat.icon }} mr-1"></i> {{ cat.name }}
+                    </span>
+                    {% endfor %}
+                </div>
+            </div>
+
+            <!-- Living -->
+            <div>
+                <p class="text-xs font-bold text-blue-400 uppercase tracking-wider mb-2">🛒 Kebutuhan (Living)</p>
+                <div class="flex flex-wrap gap-2">
+                    {% for cat in expense_living %}
+                    <span class="bg-blue-50 text-blue-700 px-3 py-1 rounded-lg text-sm border border-blue-100 flex items-center">
+                        <i class="ph ph-{{ cat.icon }} mr-1"></i> {{ cat.name }}
+                    </span>
+                    {% endfor %}
+                </div>
+            </div>
+
+            <!-- Lifestyle -->
+            <div>
+                <p class="text-xs font-bold text-purple-400 uppercase tracking-wider mb-2">✨ Keinginan (Lifestyle)</p>
+                <div class="flex flex-wrap gap-2">
+                    {% for cat in expense_lifestyle %}
+                    <span class="bg-purple-50 text-purple-700 px-3 py-1 rounded-lg text-sm border border-purple-100 flex items-center">
+                        <i class="ph ph-{{ cat.icon }} mr-1"></i> {{ cat.name }}
+                    </span>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Section: Danger Zone -->
+    <div class="bg-white p-5 rounded-2xl shadow-sm border border-red-100">
+        <h2 class="font-bold text-red-600 mb-2">Zona Bahaya</h2>
+        <p class="text-xs text-gray-500 mb-4">Hapus semua transaksi dan mulai dari awal (Data dompet & kategori tetap aman).</p>
+        <form action="/account/reset_data" method="post" onsubmit="return confirm('YAKIN RESET DATA? Semua transaksi akan hilang permanen!');">
+            <button type="submit" class="w-full border-2 border-red-100 text-red-500 font-bold py-3 rounded-xl hover:bg-red-50 transition">
+                Reset Semua Data Transaksi
+            </button>
+        </form>
+    </div>
+</div>
+
+<!-- Modal Tambah Kategori -->
+<div id="modalAddCat" class="hidden fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
+    <div class="bg-white w-full max-w-sm rounded-2xl p-6 shadow-2xl">
+        <h3 class="font-bold text-lg mb-4">Kategori Baru</h3>
+        <form action="/account/category/add" method="post" class="space-y-4">
+            
+            <input type="hidden" name="type" value="expense">
+            
+            <div>
+                <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Nama Kategori</label>
+                <input type="text" name="name" required class="w-full border border-gray-300 rounded-lg p-3 outline-none focus:border-blue-500">
+            </div>
+
+            <div>
+                <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Kelompok (Bucket)</label>
+                <select name="group" class="w-full border border-gray-300 rounded-lg p-3 outline-none bg-white">
+                    <option value="fixed">🔒 Kewajiban (Fixed Cost)</option>
+                    <option value="living">🛒 Kebutuhan (Living Cost)</option>
+                    <option value="lifestyle">✨ Keinginan (Lifestyle)</option>
+                </select>
+            </div>
+
+            <div>
+                <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Ikon (Phosphor Name)</label>
+                <input type="text" name="icon" placeholder="tag" class="w-full border border-gray-300 rounded-lg p-3 outline-none focus:border-blue-500">
+                <p class="text-[10px] text-gray-400 mt-1">Cth: coffee, car, baby, book</p>
+            </div>
+
+            <div class="flex space-x-3 pt-2">
+                <button type="button" onclick="document.getElementById('modalAddCat').classList.add('hidden')" class="flex-1 bg-gray-100 text-gray-600 font-bold py-3 rounded-xl">Batal</button>
+                <button type="submit" class="flex-1 bg-blue-600 text-white font-bold py-3 rounded-xl">Simpan</button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

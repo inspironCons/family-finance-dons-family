@@ -1,0 +1,76 @@
+{% extends "base.html" %}
+
+{% block title %}Hapus Dompet{% endblock %}
+
+{% block content %}
+<div class="p-6">
+    <div class="flex items-center mb-6">
+        <a href="/wallets" class="text-gray-600 mr-4">
+            <i class="ph ph-arrow-left text-2xl"></i>
+        </a>
+        <h1 class="text-xl font-bold">Hapus Dompet</h1>
+    </div>
+
+    <div class="bg-red-50 border border-red-100 p-4 rounded-xl mb-6">
+        <div class="flex items-center text-red-600 mb-2">
+            <i class="ph ph-warning-circle text-xl mr-2"></i>
+            <span class="font-bold">Perhatian</span>
+        </div>
+        <p class="text-sm text-gray-700">
+            Anda akan menghapus dompet <strong>{{ wallet.name }}</strong>. 
+            Dompet ini akan diarsipkan agar riwayat transaksi masa lalu <strong>TIDAK HILANG</strong>.
+        </p>
+    </div>
+
+    <div class="bg-white border border-gray-200 p-4 rounded-xl mb-6 shadow-sm">
+        <p class="text-xs text-gray-500 uppercase font-bold">Sisa Saldo Saat Ini</p>
+        <p class="text-2xl font-bold text-gray-800">Rp {{ "{:,.0f}".format(wallet.initial_balance).replace(',', '.') }}</p>
+    </div>
+
+    {% if wallet.initial_balance > 0 %}
+    <form action="/wallets/{{ wallet.id }}/delete" method="post" class="space-y-6">
+        
+        <div>
+            <label class="block text-sm font-bold text-gray-800 mb-2">Apa yang harus dilakukan dengan sisa saldo?</label>
+            
+            <!-- Option 1: Transfer -->
+            <label class="flex items-start p-3 border border-gray-200 rounded-xl mb-3 cursor-pointer hover:bg-gray-50 has-[:checked]:border-blue-500 has-[:checked]:bg-blue-50">
+                <input type="radio" name="action" value="transfer" checked class="mt-1 mr-3">
+                <div>
+                    <span class="block font-bold text-gray-800">Pindahkan ke Dompet Lain</span>
+                    <span class="text-xs text-gray-500">Saldo akan ditransfer otomatis.</span>
+                    
+                    <select name="target_wallet_id" class="mt-2 w-full bg-white border border-gray-300 text-sm rounded-lg p-2 outline-none">
+                        {% for w in other_wallets %}
+                        <option value="{{ w.id }}">{{ w.name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+            </label>
+
+            <!-- Option 2: Remove -->
+            <label class="flex items-start p-3 border border-gray-200 rounded-xl cursor-pointer hover:bg-gray-50 has-[:checked]:border-red-500 has-[:checked]:bg-red-50">
+                <input type="radio" name="action" value="remove" class="mt-1 mr-3">
+                <div>
+                    <span class="block font-bold text-gray-800">Hapus / Hanguskan Saldo</span>
+                    <span class="text-xs text-gray-500">Saldo dianggap hilang/koreksi (Adjusment).</span>
+                </div>
+            </label>
+        </div>
+
+        <button type="submit" class="w-full bg-red-600 text-white font-bold py-4 rounded-xl shadow-lg hover:bg-red-700">
+            Arsipkan Dompet
+        </button>
+    </form>
+    {% else %}
+    <!-- Jika saldo 0, langsung hapus saja -->
+    <form action="/wallets/{{ wallet.id }}/delete" method="post">
+        <input type="hidden" name="action" value="remove">
+        <button type="submit" class="w-full bg-red-600 text-white font-bold py-4 rounded-xl shadow-lg hover:bg-red-700">
+            Arsipkan Dompet (Saldo 0)
+        </button>
+    </form>
+    {% endif %}
+
+</div>
+{% endblock %}

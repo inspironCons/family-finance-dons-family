@@ -1,0 +1,12 @@
+fastapi
+uvicorn[standard]
+sqlalchemy
+pandas
+jinja2
+python-multipart
+pydantic
+python-dotenv
+itsdangerous
+google-generativeai
+apscheduler
+fastapi-mail

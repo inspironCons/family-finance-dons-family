@@ -1,0 +1,103 @@
+{% extends "base.html" %}
+
+{% block title %}Tambah Transaksi{% endblock %}
+
+{% block content %}
+<div class="p-6">
+    <div class="flex items-center mb-6">
+        <a href="/" class="text-gray-600 mr-4">
+            <i class="ph ph-arrow-left text-2xl"></i>
+        </a>
+        <h1 class="text-xl font-bold">Catat Transaksi</h1>
+    </div>
+
+    <form action="/transactions/add" method="post" class="space-y-5">
+        <!-- Nominal -->
+        <div>
+            <label class="block text-xs font-bold text-gray-500 uppercase mb-2">Nominal</label>
+            <div class="relative">
+                <span class="absolute left-4 top-1/2 -translate-y-1/2 font-bold text-gray-400">Rp</span>
+                <!-- Input tampilan (Formatted) -->
+                <input type="text" id="displayAmount" required
+                    class="w-full bg-gray-50 border border-gray-200 rounded-xl py-4 pl-12 pr-4 text-2xl font-bold focus:ring-2 focus:ring-blue-500 outline-none"
+                    placeholder="0" inputmode="numeric">
+                <!-- Input rahasia (Value asli untuk dikirim ke server) -->
+                <input type="hidden" name="amount" id="realAmount">
+            </div>
+        </div>
+
+        <script>
+            const displayInput = document.getElementById('displayAmount');
+            const realInput = document.getElementById('realAmount');
+
+            displayInput.addEventListener('input', function(e) {
+                // 1. Ambil value dan hapus karakter non-angka
+                let value = this.value.replace(/[^0-9]/g, '');
+                
+                // 2. Simpan nilai asli ke input hidden
+                realInput.value = value;
+                
+                // 3. Format tampilan dengan pemisah ribuan (titik)
+                if (value) {
+                    this.value = new Intl.NumberFormat('id-ID').format(value);
+                } else {
+                    this.value = '';
+                }
+            });
+            
+            // Prevent form submit if amount is empty
+            document.querySelector('form').addEventListener('submit', function(e) {
+                if (!realInput.value) {
+                    e.preventDefault();
+                    alert('Mohon isi nominal transaksi');
+                }
+            });
+        </script>
+
+        <!-- Tanggal -->
+        <div>
+            <label class="block text-xs font-bold text-gray-500 uppercase mb-2">Tanggal</label>
+            <input type="date" name="date" value="{{ today }}" required
+                class="w-full bg-gray-50 border border-gray-200 rounded-xl p-4 focus:ring-2 focus:ring-blue-500 outline-none">
+        </div>
+
+        <!-- Kategori -->
+        <div>
+            <label class="block text-xs font-bold text-gray-500 uppercase mb-2">Kategori</label>
+            <select name="category_id" required
+                class="w-full bg-gray-50 border border-gray-200 rounded-xl p-4 appearance-none focus:ring-2 focus:ring-blue-500 outline-none">
+                {% for cat in categories %}
+                <option value="{{ cat.id }}">
+                    {{ "📥" if cat.category_type.value == 'income' else "📤" }} {{ cat.name }}
+                </option>
+                {% endfor %}
+            </select>
+        </div>
+
+        <!-- Dompet -->
+        <div>
+            <label class="block text-xs font-bold text-gray-500 uppercase mb-2">Pilih Dompet</label>
+            <select name="wallet_id" required
+                class="w-full bg-gray-50 border border-gray-200 rounded-xl p-4 appearance-none focus:ring-2 focus:ring-blue-500 outline-none">
+                {% for wallet in wallets %}
+                <option value="{{ wallet.id }}">{{ wallet.name }} (Sisa: Rp {{ "{:,.0f}".format(wallet.initial_balance) }})</option>
+                {% endfor %}
+            </select>
+        </div>
+
+        <!-- Catatan -->
+        <div>
+            <label class="block text-xs font-bold text-gray-500 uppercase mb-2">Catatan (Opsional)</label>
+            <textarea name="description" rows="2"
+                class="w-full bg-gray-50 border border-gray-200 rounded-xl p-4 focus:ring-2 focus:ring-blue-500 outline-none"
+                placeholder="Beli apa hari ini?"></textarea>
+        </div>
+
+        <!-- Submit Button -->
+        <button type="submit"
+            class="w-full bg-blue-600 text-white font-bold py-4 rounded-xl shadow-lg hover:bg-blue-700 transition transform active:scale-95">
+            Simpan Transaksi
+        </button>
+    </form>
+</div>
+{% endblock %}
