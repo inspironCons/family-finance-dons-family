@@ -1,61 +1,38 @@
 from fastapi import FastAPI, Request, Depends
-from fastapi.responses import RedirectResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
-from starlette.middleware.sessions import SessionMiddleware
-from starlette.middleware.base import BaseHTTPMiddleware
 from sqlalchemy.orm import Session
 from sqlalchemy import func
-from datetime import date
+from datetime import date, datetime
 import calendar
 from .database import engine, Base, get_db
 from . import models, crud, schemas
-from .routers import transactions, wallets, account, reports, auth
-from .config import settings
-# from .services.scheduler import start_scheduler # Disabled for MVP
+from .routers import transactions, wallets, account, reports
 
 # Create Tables automatically
 Base.metadata.create_all(bind=engine)
 
 app = FastAPI(title="Family Finance PWA")
 
-# Middleware Auth Custom
-class AuthMiddleware(BaseHTTPMiddleware):
-    async def dispatch(self, request: Request, call_next):
-        allowed_paths = ["/auth/login", "/static", "/docs", "/openapi.json"]
-        is_allowed = any(request.url.path.startswith(path) for path in allowed_paths)
-        if not is_allowed and not request.session.get("user"):
-            return RedirectResponse(url="/auth/login")
-        response = await call_next(request)
-        return response
-
-app.add_middleware(AuthMiddleware)
-app.add_middleware(SessionMiddleware, secret_key=settings.SECRET_KEY, max_age=3600)
-
+# Mount Static Files
 app.mount("/static", StaticFiles(directory="static"), name="static")
 
-app.include_router(auth.router)
+# Include Routers
 app.include_router(transactions.router)
 app.include_router(wallets.router)
 app.include_router(account.router)
 app.include_router(reports.router)
 
+# Templates
 templates = Jinja2Templates(directory="templates")
 
-# Definisi seed_data HARUS di sini
+# Dependency untuk Seeding Data Awal
 def seed_data(db: Session):
-    if not db.query(models.User).first():
-        print("👤 Creating default user...")
-        default_user = models.User(
-            username="admin",
-            full_name="Kepala Keluarga",
-            pin_hash=settings.ADMIN_PIN
-        )
-        db.add(default_user)
-        db.commit()
-
+    # Cek apakah kategori sudah ada
     if not db.query(models.Category).first():
         print("🌱 Seeding initial data...")
+        
+        # 1. Kategori Pemasukan
         incomes = [
             {"name": "Gaji Bulanan", "category_type": "income", "icon": "money"},
             {"name": "Bonus/THR", "category_type": "income", "icon": "gift"},
@@ -63,12 +40,18 @@ def seed_data(db: Session):
         for inc in incomes:
             db.add(models.Category(**inc))
             
+        # 2. Kategori Pengeluaran (3 Buckets)
         expenses = [
+            # Fixed (Kewajiban)
             {"name": "KPR", "category_type": "expense", "priority_group": "fixed", "icon": "house"},
             {"name": "Listrik", "category_type": "expense", "priority_group": "fixed", "icon": "lightning"},
+            
+            # Living (Kebutuhan)
             {"name": "Belanja", "category_type": "expense", "priority_group": "living", "icon": "shopping-cart"},
             {"name": "Bensin/Transport", "category_type": "expense", "priority_group": "living", "icon": "gas-pump"},
             {"name": "Pulsa/Internet", "category_type": "expense", "priority_group": "living", "icon": "wifi-high"},
+            
+            # Lifestyle (Keinginan)
             {"name": "Jajan", "category_type": "expense", "priority_group": "lifestyle", "icon": "coffee"},
             {"name": "Makan Luar", "category_type": "expense", "priority_group": "lifestyle", "icon": "fork-knife"},
             {"name": "Langganan Digital", "category_type": "expense", "priority_group": "lifestyle", "icon": "film-strip"},
@@ -76,6 +59,7 @@ def seed_data(db: Session):
         for exp in expenses:
             db.add(models.Category(**exp))
             
+        # 3. Wallet Default
         wallets = [
             {"name": "Dompet Tunai", "wallet_type": "Cash", "initial_balance": 0},
         ]
@@ -87,35 +71,50 @@ def seed_data(db: Session):
 
 @app.on_event("startup")
 def on_startup():
+    # Trigger seeding saat aplikasi nyala
     with Session(engine) as session:
         seed_data(session)
-    # start_scheduler() # Disabled
 
 @app.get("/")
 def dashboard(request: Request, db: Session = Depends(get_db)):
     wallets = crud.get_wallets(db)
-    transactions = db.query(models.Transaction).order_by(models.Transaction.date.desc()).limit(10).all()
-    total_balance = sum(w.initial_balance for w in wallets)
-    today = date.today()
-    start_date = date(today.year, today.month, 1)
-    tx_month = db.query(models.Transaction).filter(models.Transaction.date >= start_date, models.Transaction.date <= today).all()
-    month_income = sum(t.amount for t in tx_month if t.category.category_type == models.TransactionType.INCOME)
-    month_expense = sum(t.amount for t in tx_month if t.category.category_type == models.TransactionType.EXPENSE)
-    remaining_budget = month_income - month_expense
-    last_day = calendar.monthrange(today.year, today.month)[1]
-    days_left = last_day - today.day + 1
+    recent_transactions = db.query(models.Transaction).order_by(models.Transaction.date.desc()).limit(5).all()
     
-    if days_left > 0 and remaining_budget > 0:
-        daily_allowance = remaining_budget / days_left
-    else:
-        daily_allowance = 0
+    total_balance = sum(w.initial_balance for w in wallets)
+    
+    # Hitung Statistik Bulan Ini
+    today = date.today()
+    start_of_month = date(today.year, today.month, 1)
+    
+    # Total Pengeluaran Bulan Ini
+    month_expense = db.query(func.sum(models.Transaction.amount))\
+        .join(models.Category)\
+        .filter(
+            models.Transaction.date >= start_of_month,
+            models.Category.category_type == models.TransactionType.EXPENSE
+        ).scalar() or 0.0
         
+    # Total Pemasukan Bulan Ini (Asumsi sebagai budget)
+    month_income = db.query(func.sum(models.Transaction.amount))\
+        .join(models.Category)\
+        .filter(
+            models.Transaction.date >= start_of_month,
+            models.Category.category_type == models.TransactionType.INCOME
+        ).scalar() or 0.0
+        
+    remaining_budget = max(0, month_income - month_expense)
+    
+    # Hitung Jatah Harian
+    last_day = calendar.monthrange(today.year, today.month)[1]
+    days_remaining = (last_day - today.day) + 1
+    daily_allowance = remaining_budget / days_remaining if days_remaining > 0 else remaining_budget
+    
     return templates.TemplateResponse("dashboard.html", {
         "request": request,
         "wallets": wallets,
-        "transactions": transactions,
+        "transactions": recent_transactions,
         "total_balance": total_balance,
-        "daily_allowance": daily_allowance,
-        "remaining_budget": remaining_budget,
         "month_expense": month_expense,
+        "remaining_budget": remaining_budget,
+        "daily_allowance": daily_allowance
     })

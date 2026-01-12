@@ -87,7 +87,10 @@
 
 <!-- Recent Transactions -->
 <section class="px-6 mb-20">
-    <h2 class="text-lg font-bold text-gray-800 mb-3">Transaksi Terakhir</h2>
+    <div class="flex justify-between items-center mb-3">
+        <h2 class="text-lg font-bold text-gray-800">Transaksi Terakhir</h2>
+        <a href="/transactions/history" class="text-xs font-bold text-blue-600 hover:text-blue-800 transition">Lihat Semua</a>
+    </div>
     <div class="space-y-3">
         {% if transactions %}
             {% for tx in transactions %}

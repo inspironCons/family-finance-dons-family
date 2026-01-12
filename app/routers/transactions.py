@@ -3,11 +3,58 @@ from fastapi.responses import RedirectResponse
 from fastapi.templating import Jinja2Templates
 from sqlalchemy.orm import Session
 from datetime import date
+import calendar
 from ..database import get_db
 from .. import models, crud
 
 router = APIRouter(prefix="/transactions", tags=["transactions"])
 templates = Jinja2Templates(directory="templates")
+
+@router.get("/history")
+def transaction_history(
+    request: Request,
+    start_date: str = None, 
+    end_date: str = None, 
+    filter_type: str = "this_month",
+    db: Session = Depends(get_db)
+):
+    today = date.today()
+    
+    # Logic Penentuan Tanggal
+    if filter_type == "mtd":
+        # Month to Date: Tanggal 1 s/d Hari Ini
+        start_date_obj = date(today.year, today.month, 1)
+        end_date_obj = today
+        
+    elif filter_type == "custom" and start_date and end_date:
+        # Custom Range
+        try:
+            start_date_obj = date.fromisoformat(start_date)
+            end_date_obj = date.fromisoformat(end_date)
+        except ValueError:
+            # Fallback ke This Month jika format error
+            start_date_obj = date(today.year, today.month, 1)
+            end_date_obj = date(today.year, today.month, calendar.monthrange(today.year, today.month)[1])
+            filter_type = "this_month"
+            
+    else:
+        # Default: This Month (Full)
+        filter_type = "this_month"
+        start_date_obj = date(today.year, today.month, 1)
+        end_date_obj = date(today.year, today.month, calendar.monthrange(today.year, today.month)[1])
+    
+    transactions = db.query(models.Transaction).filter(
+        models.Transaction.date >= start_date_obj,
+        models.Transaction.date <= end_date_obj
+    ).order_by(models.Transaction.date.desc()).all()
+    
+    return templates.TemplateResponse("transaction_history.html", {
+        "request": request,
+        "transactions": transactions,
+        "start_date": start_date_obj.isoformat(),
+        "end_date": end_date_obj.isoformat(),
+        "filter_type": filter_type
+    })
 
 @router.get("/add")
 def add_transaction_form(request: Request, db: Session = Depends(get_db)):

@@ -15,4 +15,6 @@ services:
       - ./static:/app/static
     environment:
       - SQLALCHEMY_DATABASE_URL=sqlite:///./data/finance.db
+    env_file:
+      - .env
     restart: unless-stopped
