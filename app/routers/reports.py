@@ -85,7 +85,7 @@ def advisor_page(request: Request):
 
 @router.post("/analyze")
 async def analyze_finances(db: Session = Depends(get_db)):
-    # 1. Cek Cache Harian dulu
+    # 1. Cek Cache Harian (Maksimal 1x Sehari)
     today_advice = db.query(models.AIAdvice).filter(
         func.date(models.AIAdvice.created_at) == date.today()
     ).first()

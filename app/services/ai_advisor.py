@@ -1,4 +1,5 @@
-import google.generativeai as genai
+from google import genai
+from google.genai import types
 from ..config import settings
 import logging
 import os
@@ -10,14 +11,13 @@ def get_financial_advice(month_income, month_expense, top_categories):
         return "API Key missing."
 
     try:
-        genai.configure(api_key=settings.GEMINI_API_KEY)
-        model = genai.GenerativeModel('gemini-3-flash-preview')
-
+        client = genai.Client(api_key=settings.GEMINI_API_KEY)
+        
         top_cat_str = ", ".join([f"{c['name']} (Rp {c['total']:,})" for c in top_categories])
         sisa_cashflow = month_income - month_expense
         
         # Baca Context dari File (Rahasia & Fleksibel)
-        context_file_path = "context.txt" # Path di dalam container (root workdir /app)
+        context_file_path = "context.txt" # Path di dalam container
         user_context = "User adalah keluarga yang ingin berhemat." # Default aman
         
         if os.path.exists(context_file_path):
@@ -41,9 +41,21 @@ def get_financial_advice(month_income, month_expense, top_categories):
         Keep it short, insightful, and actionable.
         """
 
-        response = model.generate_content(prompt)
+        # Menggunakan Gemini 2.5 Flash
+        response = client.models.generate_content(
+            model='gemini-2.5-flash',
+            contents=prompt,
+            config=types.GenerateContentConfig(
+                thinking_config=types.ThinkingConfig(include_thoughts=False)
+            )
+        )
+        print(f"DEBUG GEMINI RESPONSE: {response.text.strip()}")
+
+        
         return response.text.strip()
 
     except Exception as e:
+        import traceback
+        print(f"DEBUG GEMINI ERROR FULL: {traceback.format_exc()}")
         logger.error(f"Gemini AI Error: {e}")
-        return "Waduh, AI-nya lagi bengong. Coba lagi nanti ya!"
+        return f"Waduh, AI-nya lagi bengong. Error: {str(e)}"

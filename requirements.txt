@@ -7,6 +7,6 @@ python-multipart
 pydantic
 python-dotenv
 itsdangerous
-google-generativeai
+google-genai
 apscheduler
 fastapi-mail

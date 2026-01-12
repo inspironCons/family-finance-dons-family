@@ -89,39 +89,52 @@
 
 <script>
     async function askGemini() {
-        // Switch View: Initial -> Loading
-        document.getElementById('viewInitial').classList.add('opacity-0', 'pointer-events-none'); // Fade out
-        setTimeout(() => {
-            document.getElementById('viewInitial').classList.add('hidden');
-            document.getElementById('viewLoading').classList.remove('hidden');
-            document.getElementById('viewLoading').classList.add('flex');
+        let isLoadingShown = false;
+        
+        // 1. Start Transition: Fade out Initial
+        const initialView = document.getElementById('viewInitial');
+        const loadingView = document.getElementById('viewLoading');
+        const resultView = document.getElementById('viewResult');
+        
+        initialView.classList.add('opacity-0', 'pointer-events-none');
+        
+        // Timer untuk menampilkan Loading setelah animasi fade-out (300ms)
+        const loadingTimer = setTimeout(() => {
+            initialView.classList.add('hidden');
+            loadingView.classList.remove('hidden');
+            loadingView.classList.add('flex');
+            isLoadingShown = true;
         }, 300);
         
         try {
             const response = await fetch('/reports/analyze', { method: 'POST' });
             const data = await response.json();
             
-            // Switch View: Loading -> Result
-            document.getElementById('viewLoading').classList.add('hidden');
-            document.getElementById('viewLoading').classList.remove('flex');
-            document.getElementById('viewResult').classList.remove('hidden');
+            // 2. Request Selesai
+            clearTimeout(loadingTimer); // Batalkan timer jika request sangat cepat (<300ms)
+            
+            // Pastikan state UI konsisten
+            initialView.classList.add('hidden'); // Force hide initial
+            loadingView.classList.add('hidden'); // Force hide loading
+            loadingView.classList.remove('flex');
+            resultView.classList.remove('hidden'); // Show Result
             
             if (data.status === 'success') {
                 const rawText = data.message;
-                
-                // Gunakan Marked.js jika tersedia, jika tidak fallback ke text biasa
                 if (typeof marked !== 'undefined') {
                     document.getElementById('resultText').innerHTML = marked.parse(rawText);
                 } else {
-                    // Fallback formatting sederhana
                     document.getElementById('resultText').innerHTML = rawText.replace(/\n/g, '<br>');
                 }
             } else {
                 document.getElementById('resultText').innerHTML = `<p class="text-red-500 font-bold">Error: ${data.message}</p>`;
             }
         } catch (error) {
-            document.getElementById('viewLoading').classList.add('hidden');
-            document.getElementById('viewResult').classList.remove('hidden');
+            clearTimeout(loadingTimer);
+            initialView.classList.add('hidden');
+            loadingView.classList.add('hidden');
+            loadingView.classList.remove('flex');
+            resultView.classList.remove('hidden');
             document.getElementById('resultText').innerHTML = `<p class="text-red-500 font-bold">Gagal menghubungi server. Periksa koneksi internet.</p>`;
         }
     }
