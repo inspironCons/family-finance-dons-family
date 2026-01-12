@@ -11,7 +11,7 @@ def get_financial_advice(month_income, month_expense, top_categories):
 
     try:
         genai.configure(api_key=settings.GEMINI_API_KEY)
-        model = genai.GenerativeModel('gemini-1.5-flash')
+        model = genai.GenerativeModel('gemini-3-flash-preview')
 
         top_cat_str = ", ".join([f"{c['name']} (Rp {c['total']:,})" for c in top_categories])
         sisa_cashflow = month_income - month_expense
