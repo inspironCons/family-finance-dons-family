@@ -7,12 +7,50 @@ from datetime import date, datetime
 import calendar
 from .database import engine, Base, get_db
 from . import models, crud, schemas
-from .routers import transactions, wallets, account, reports
+from starlette.middleware.sessions import SessionMiddleware
+from starlette.responses import RedirectResponse
+from .routers import transactions, wallets, account, reports, auth
+from .services.scheduler import start_scheduler
+from .config import settings
 
 # Create Tables automatically
 Base.metadata.create_all(bind=engine)
 
 app = FastAPI(title="Family Finance PWA")
+
+# Middleware untuk Cek Login (Protect Routes)
+@app.middleware("http")
+async def auth_middleware(request: Request, call_next):
+    # Daftar URL yang boleh diakses tanpa login
+    public_routes = [
+        "/auth/login", 
+        "/static", 
+        "/favicon.ico", 
+        "/manifest.json", 
+        "/docs", 
+        "/openapi.json"
+    ]
+    
+    # Cek apakah path saat ini ada di public_routes
+    is_public = any(request.url.path.startswith(route) for route in public_routes)
+    
+    # Cek Session
+    user = request.session.get("user")
+    
+    if not is_public and not user:
+        # Jika bukan public route dan tidak ada user, redirect ke login
+        return RedirectResponse(url="/auth/login", status_code=303)
+    
+    response = await call_next(request)
+    return response
+
+# Add Session Middleware (1 Hour Timeout)
+# Registered AFTER auth_middleware so it executes BEFORE it (LIFO)
+app.add_middleware(
+    SessionMiddleware, 
+    secret_key=settings.SECRET_KEY, 
+    max_age=3600 # 1 Jam
+)
 
 # Mount Static Files
 app.mount("/static", StaticFiles(directory="static"), name="static")
@@ -22,6 +60,7 @@ app.include_router(transactions.router)
 app.include_router(wallets.router)
 app.include_router(account.router)
 app.include_router(reports.router)
+app.include_router(auth.router)
 
 # Templates
 templates = Jinja2Templates(directory="templates")
